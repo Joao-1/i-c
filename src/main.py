@@ -1,6 +1,7 @@
 from simulations.free_fall import FreeFall
 import matplotlib.pyplot as plt
-from methods.initial import Initial
+from methods.simple import Simple
+from methods.verlet import Verlet
 from methods.theory import Theory
 from definitions import Object, Conditions
 import numpy
@@ -14,37 +15,53 @@ graph = True
 
 def main():
     time = 0
-    simulationMethod = FreeFall()
+    simulationSimple = FreeFall()
+    simuationVerlet = FreeFall()
     simulationTheory = FreeFall()
-    objectsMethod = [Object(10.0, numpy.array([0, 10000]), numpy.array([0, 0]))]
+    objectsSimple = [Object(10.0, numpy.array([0, 10000]), numpy.array([0, 0]))]
+    objectsVerlet = [Object(10.0, numpy.array([0, 10000]), numpy.array([0, 0]))]
     objectsTheory = [Object(10.0, numpy.array([0, 10000]), numpy.array([0, 0]))]
-    method = Initial()
+    simple = Simple()
+    verlet = Verlet()
     theory = Theory()
 
-    conditions = Conditions(differenceTime=0.01, acceleration=numpy.array([0, -9.8]))
+    conditions = Conditions(differenceTime=10, acceleration=numpy.array([0, -9.8]))
 
     timeData = [0]
     positionData = {
-        "method": [objectsMethod[0].position[1]],
+        "simple": [objectsSimple[0].position[1]],
+        "verlet": [objectsVerlet[0].position[1]],
         "theory": [objectsTheory[0].position[1]]
     }
     velocityData = {
-        "method": [objectsMethod[0].velocity[1]],
+        "simple": [objectsSimple[0].velocity[1]],
+        "verlet": [objectsVerlet[0].velocity[1]],
         "theory": [objectsTheory[0].velocity[1]]
     }
 
     while running:
-        # Method simulation
-        simulationMethod.update(method, objectsMethod, conditions)
+        if time > 60: 
+            break
 
-        if simulationMethod.end:
+        # Simple simulation
+        simulationSimple.update(simple, objectsSimple, conditions)
+
+        if simulationSimple.end:
             break
         
-        positionData["method"].append(objectsMethod[0].position[1])
-        velocityData["method"].append(objectsMethod[0].velocity[1])
+        positionData["simple"].append(objectsSimple[0].position[1])
+        velocityData["simple"].append(objectsSimple[0].velocity[1])
+
+        # Verlet simulation
+        simuationVerlet.update(verlet, objectsVerlet, conditions)
+
+        if simuationVerlet.end:
+            break
+
+        positionData["verlet"].append(objectsVerlet[0].position[1])
+        velocityData["verlet"].append(objectsVerlet[0].velocity[1])
 
         # Theoretical simulation
-
         simulationTheory.update(theory, objectsTheory, conditions)
 
         if simulationTheory.end:
@@ -56,22 +73,32 @@ def main():
         time += conditions.differenceTime
         timeData.append(time)
 
-        print("PositionMethod: ", objectsMethod[0].position, "VelocityMethod: ", objectsMethod[0].velocity, "Time: ", time)
-        print("PositionTheory: ", objectsTheory[0].position, "VelocityTheory: ", objectsTheory[0].velocity, "Time: ", time)
     
+
+    print("PositionSimple: ", positionData["simple"][-1], "VelocitySimple: ", velocityData["simple"][-1], "Time: ", time)
+    print("PositionVerlet: ", positionData["verlet"][-1], "VelocityVerlet: ", velocityData["verlet"][-1], "Time: ", time)
+    print("PositionTheory: ", positionData["theory"][-1], "VelocityTheory: ", velocityData["theory"][-1], "Time: ", time)
+    
+    print("Simple length: ", len(positionData["simple"]))
+    print("Verlet length: ", len(positionData["verlet"]))
+    print("Theory length: ", len(positionData["theory"]))
+    
+
 
     plt.figure()
     plt.subplot(211)
     plt.ylabel('Height (m)')
-    plt.plot(timeData, positionData["method"])  
-    plt.plot(timeData, positionData["theory"], linestyle='--', color='red')
+    plt.plot(timeData, positionData["simple"], color='red')  
+    plt.plot(timeData, positionData["verlet"], linestyle='--', color='green')
+    plt.plot(timeData, positionData["theory"], linestyle='--', color='blue')
 
 
     plt.subplot(212)
     plt.ylabel('Velocity (m/s)')
     plt.xlabel('Time (s)')
-    plt.plot(timeData, velocityData["method"])
-    plt.plot(timeData, velocityData["theory"], linestyle='--', color='red')
+    plt.plot(timeData, velocityData["simple"], color='red')
+    plt.plot(timeData, velocityData["verlet"], color='green')
+    plt.plot(timeData, velocityData["theory"], linestyle='--', color='blue')
 
     plt.savefig("free_fall.png")
 
